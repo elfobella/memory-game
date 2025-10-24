@@ -21,7 +21,8 @@ let gameState = {
     gameStarted: false,
     currentPlayerIndex: 0,
     cards: [],
-    gameTimer: null
+    gameTimer: null,
+    totalMatchedPairs: 0
 };
 
 // Kart ikonları
@@ -63,6 +64,7 @@ function startGame() {
         gameState.gameStarted = true;
         gameState.cards = createCards();
         gameState.currentPlayerIndex = 0;
+        gameState.totalMatchedPairs = 0;
         
         io.emit('gameStarted', {
             players: gameState.players,
@@ -98,6 +100,7 @@ function endGame() {
     });
     gameState.gameStarted = false;
     gameState.currentPlayerIndex = 0;
+    gameState.totalMatchedPairs = 0;
     
     if (gameState.gameTimer) {
         clearTimeout(gameState.gameTimer);
@@ -176,10 +179,22 @@ io.on('connection', (socket) => {
                 player.moves++;
             }
             
+            // Global eşleşme sayısını artır
+            gameState.totalMatchedPairs++;
+            
             io.emit('cardsMatched', {
                 cardIndices: data.cardIndices,
                 playerId: socket.id
             });
+            
+            console.log(`Cards matched! Total pairs: ${gameState.totalMatchedPairs}/8`);
+            
+            // Oyun bitti mi kontrol et
+            if (gameState.totalMatchedPairs >= 8) {
+                console.log('All cards matched! Ending game...');
+                endGame();
+                return;
+            }
             
             // Eşleşme varsa aynı oyuncu devam eder, yoksa sıra geçer
             // Bu basit implementasyonda her zaman sıra geçiyor
@@ -197,21 +212,7 @@ io.on('connection', (socket) => {
         }
     });
     
-    // Oyun tamamlandı
-    socket.on('gameCompleted', (data) => {
-        const player = gameState.players.find(p => p.id === socket.id);
-        if (player) {
-            player.score = data.score;
-            player.moves = data.moves;
-            player.time = data.time;
-        }
-        
-        // Tüm kartlar eşleşti mi kontrol et
-        const totalMatches = gameState.players.reduce((sum, p) => sum + (p.score / 10), 0);
-        if (totalMatches >= 8) {
-            endGame();
-        }
-    });
+    // Oyun tamamlandı (artık kullanılmıyor, server kendisi kontrol ediyor)
     
     // Chat mesajı
     socket.on('chatMessage', (data) => {
