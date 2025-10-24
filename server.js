@@ -277,7 +277,8 @@ app.get('/', (req, res) => {
 
 // Port
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, () => {
     console.log(`Sunucu ${PORT} portunda çalışıyor`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Server is running on port ${PORT}`);
 });
